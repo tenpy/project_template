@@ -1,14 +1,14 @@
 #!/bin/bash 
 
 job_config:
-    class: JobConfig
+    class: JobConfig  # JobConfig = run locally; SlurmJob = submit to slurm
     jobname: MyJob
     task: 
         type: PythonFunctionCall
-        module: simulation
+        module: tenpy
         function: run_simulation
-        # extra_imports: 
-        #     - my_other_py_module
+        extra_imports: 
+            - custom_model
 
     #script_template: slurm.sh
     requirements_slurm:
@@ -20,35 +20,39 @@ job_config:
     # options: 
     #     mail: no@example.com
 
-    # TODO: allow this
-    # change_output_filename:
-    #     key: output_filename
-    #     expand_join: '_'
-    #     format: "out_{expand!s}.pkl"
-    #
     change_parameters:
-        expansion: product
-        recursive_keys:
-            - a
-            - sub_params.c
-        # value_lists: 
-        #     - [ 128, 256, 512]
-        #     - [0.5, 1.]
-        #     # you can either specify all the value_lists for all parameters here, 
-        #     # or have the lists distributed over the rest of the yaml file(s).
-        # format_strs:
-        #     - 'a_{0:04d}'
-        #     - 'c_{0:.2f}'
-         
         output_filename:
-            # key: output_filename
-            prefix: 'output'
-            suffix: '.pkl'
+            prefix: 'results'
+            suffix: '.h5'
 
-a: [100, 500, 1000]
-b: 3.1415
+        expansion: product  # product or zip
+        recursive_keys:
+            - algorithm_params.trunc_params.chi_max
+            - model_params.J2
 
-sub_params:
-    c: [0.5, 1.]
-    d: 2
+log_params: 
+    to_stdout: WARNING
+    to_file: INFO
 
+simulation_class_name : GroundStateSearch
+
+# directory: results
+# output_filename is updated by cluster_jobs.py from the `job_config: change_paramters` section above
+
+# Let's use our custom model:
+model_class :  AlternatingHeisenbergChain
+model_params :
+    L : 32
+    bc_MPS : finite
+    J1: 1.
+    J2: [0.25, 0.5, 0.75]
+
+initial_state_params:
+    method : lat_product_state
+    product_state : [[up], [down]]
+
+algorithm_class: TwoSiteDMRGEngine
+algorithm_params:
+    trunc_params:
+        svd_min: 1.e-8
+        chi_max: [128, 256]

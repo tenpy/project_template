@@ -8,6 +8,9 @@ set -e  # abort whole script if any command fails
 # conda activate tenpy
 {environment_setup}
 
+#if you want to redirect output to file, you can use somehting like
+# command &> "{jobname}.task_{task_id}.out"
+
 echo "Running task {task_id} of {config_file} on $HOSTNAME at $(date)"
-python {cluster_jobs_module} run {config_file} {task_id} &> "{jobname}.task_{task_id}.out"
+python {cluster_jobs_module} run {config_file} {task_id}
 echo "finished at $(date)"
