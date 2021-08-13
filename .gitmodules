@@ -1,0 +1,3 @@
+[submodule "tenpy"]
+	path = TeNPy
+	url = https://github.com/tenpy/tenpy.git
