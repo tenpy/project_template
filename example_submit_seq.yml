@@ -1,4 +1,8 @@
 #!/bin/bash 
+# necessary changes compared to non-sequential `example_submit.yml`:
+# - use `run_seq_simulations` instead of `run_simulation` in job_config.task.function
+# - Instead of job_config.change_parameters.output_filename, use the global `output_filename_params`
+# - add the global `sequential` section with the parameter that should be changed sequentially.
 
 job_config:
     class: JobConfig  # JobConfig = run locally; SlurmJob = submit to slurm
@@ -6,7 +10,7 @@ job_config:
     task: 
         type: PythonFunctionCall
         module: tenpy
-        function: run_simulation
+        function: run_seq_simulations
         extra_imports: 
             - custom_model
 
@@ -21,14 +25,15 @@ job_config:
     #     mail: no@example.com
 
     change_parameters:
-        output_filename:
-            prefix: 'results'
-            suffix: '.h5'
 
         expansion: product  # product or zip
         recursive_keys:
-            - algorithm_params.trunc_params.chi_max
             - model_params.J2
+
+
+sequential:
+    recursive_keys:
+        - algorithm_params.trunc_params.chi_max
 
 log_params: 
     to_stdout: WARNING
@@ -37,7 +42,9 @@ log_params:
 simulation_class : GroundStateSearch
 
 # directory: results
-# output_filename is updated by cluster_jobs.py from the `job_config: change_paramters` section above
+output_filename_params:
+    prefix: 'results'
+    suffix: '.h5'
 
 # Let's use our custom model:
 model_class :  AlternatingHeisenbergChain
