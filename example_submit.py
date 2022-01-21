@@ -9,7 +9,7 @@ config = {
         'type': 'PythonFunctionCall',
         'module': 'tenpy',
         'function': 'run_simulation',
-        'extra_imports': ['custom_model'],
+        'extra_imports': ['model_custom'],
     },
     'task_parameters': [],  # list of dict containing the **kwargs given to the `function`
     'requirements_slurm': {  # passed on to SLURM
@@ -24,7 +24,6 @@ config = {
     #      # 'M': "no@example.com"
     #  },
     'options': {  # further replacements for the job script; used to determine extra requirements
-        # 'mail': 'no@example.com',
         'cores_per_task': 4,
     }
 }
@@ -35,11 +34,24 @@ tenpy_sim_params = {
 
     'simulation_class_name': 'GroundStateSearch',
 
-    'model_class': 'AlternatingHeisenbergChain',
-    'model_params': {'J1': 1.0,
-                     'J2': None, # filled below
-                     'L': 32,
-                     'bc_MPS': 'finite'},
+    'directory': 'results',
+    'output_filename_params': {'prefix': 'dmrg',
+                               'parts': {'algorithm_params.trunc_params.chi_max': 'chi_{0:04d}',
+                                         'model_params.B': 'B_{0:.1f}',
+                                         'model_params.D': 'D_{0:.1f}'},
+                               'suffix': '.h5'},
+    'skip_if_output_exists': True,
+    # 'overwrite_output': True,
+    # 'save_every_x_seconds': 1800,
+    # 'save_psi': False,
+
+    'model_class': 'AnisotropicSpin1Chain',
+    'model_params': {'L': 2,
+                     'bc_MPS': 'infinite',
+                     'J': 1.,
+                     'B': 0.,
+                     'D': None, # filled below
+                     },
 
     'initial_state_params': {'method': 'lat_product_state',
                              'product_state': [['up'], ['down']]},
@@ -47,14 +59,28 @@ tenpy_sim_params = {
     'algorithm_class': 'TwoSiteDMRGEngine',
     'algorithm_params': {'trunc_params': {'chi_max': None, # filled below
                                           'svd_min': 1e-08}},
+
+    'connect_measurements': [['tenpy.simulations.measurement',
+                              'onsite_expectation_value',
+                              {'opname': 'Sz'}],
+                             ['tenpy.simulations.measurement',
+                              'psi_method',
+                              {'key': '<Sp_i Sm_j>',
+                               'method': 'correlation_function',
+                               'ops1': 'Sp',
+                               'ops2': 'Sm'}],
+                             ['model_custom',
+                              'pollmann_turner_inversion']],
 }
 
 
 for chi in [128, 256]:
-    for J2 in [0.25, 0.5, 0.75]:
-        tenpy_sim_params['model_params']['J2'] = J2
+    for D in np.arange(-1., 1.5, 0.5):
+        tenpy_sim_params['model_params']['D'] = D
         tenpy_sim_params['algorithm_params']['trunc_params']['chi_max'] = chi
-        tenpy_sim_params['output_filename'] = f"result_chi_{chi:d}_J2_{J2:.2f}.h5"
+        # instead of using the `output_filename_params`, you can also explicitly format the
+        # output_filename here, if you wish:
+        # tenpy_sim_params['output_filename'] = f"result_chi_{chi:d}_D_{D:.1f}.h5"
         config['task_parameters'].append(copy.deepcopy(tenpy_sim_params))
 
 # cluster_jobs.TaskArray(**config).run_local(task_ids=[2, 3], parallel=2) # run selected tasks

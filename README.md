@@ -19,7 +19,7 @@ To get started:
 
 ## Implement custom models and other classes
 
-There's a `custom_model.py` which serves as an example how to implement a new model class;
+There's a `model_custom.py` which serves as an example how to implement a new model class;
 you can add further classes (structured in other python modules, if desired), as much as you like!
 
 ## Submitting a job / running simulations

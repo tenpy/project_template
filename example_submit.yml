@@ -1,4 +1,5 @@
-#!/bin/bash 
+#!/usr/bin/env -S cluster_jobs.py submit
+# requires that `model_custom.py` can be imported.
 
 job_config:
     class: JobConfig  # JobConfig = run locally; SlurmJob = submit to slurm
@@ -7,8 +8,8 @@ job_config:
         type: PythonFunctionCall
         module: tenpy
         function: run_simulation
-        extra_imports: 
-            - custom_model
+        extra_imports:
+            - model_custom
 
     #script_template: slurm.sh
     requirements_slurm:
@@ -21,31 +22,44 @@ job_config:
     #     mail: no@example.com
 
     change_parameters:
-        output_filename:
-            prefix: 'results'
-            suffix: '.h5'
+        # update the global `output_filename_params with the `recursive_keys` below
+        output_filename_params_key: output_filename_params
 
         expansion: product  # product or zip
         recursive_keys:
+            # note that these get added to the filename automatically
             - algorithm_params.trunc_params.chi_max
-            - model_params.J2
-
-log_params: 
-    to_stdout: WARNING
-    to_file: INFO
+            - model_params.B
+            - model_params.D
 
 simulation_class : GroundStateSearch
 
-# directory: results
+directory: results
+output_filename_params:
+    prefix: dmrg
+    parts:
+        algorithm_params.trunc_params.chi_max: 'chi_{0:04d}'
+        model_params.B: 'B_{0:.1f}'
+        model_params.D: 'D_{0:.1f}'
+    suffix: .h5
+  
 # output_filename is updated by cluster_jobs.py from the `job_config: change_paramters` section above
+# skip_if_output_exists: True
+# overwrite_output: True
+save_every_x_seconds: 1800
+# save_psi: False  # don't save full wave function - less disk space, but can't resume/redo measurements!
 
-# Let's use our custom model:
-model_class :  AlternatingHeisenbergChain
+log_params:
+    to_stdout: WARNING  # always check this output - empty is good
+    to_file: INFO
+
+model_class : AnisotropicSpin1Chain
 model_params :
-    L : 32
-    bc_MPS : finite
-    J1: 1.
-    J2: [0.25, 0.5, 0.75]
+    L: 2
+    bc_MPS: infinite
+    J: 1.
+    B: [0.]
+    D: !py_eval "np.arange(-1., 1.5, 0.5)"
 
 initial_state_params:
     method : lat_product_state
@@ -56,3 +70,16 @@ algorithm_params:
     trunc_params:
         svd_min: 1.e-8
         chi_max: [128, 256]
+
+connect_measurements: 
+  - - tenpy.simulations.measurement
+    - onsite_expectation_value
+    - opname: Sz
+  - - tenpy.simulations.measurement
+    - psi_method
+    - method: correlation_function
+      key: '<Sp_i Sm_j>'
+      ops1: Sp
+      ops2: Sm
+  - - model_custom  # module where this function is defined
+    - pollmann_turner_inversion

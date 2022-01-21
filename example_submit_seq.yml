@@ -1,65 +1,27 @@
-#!/bin/bash 
-# necessary changes compared to non-sequential `example_submit.yml`:
-# - use `run_seq_simulations` instead of `run_simulation` in job_config.task.function
-# - Instead of job_config.change_parameters.output_filename, use the global `output_filename_params`
-# - add the global `sequential` section with the parameter that should be changed sequentially.
+#!/usr/bin/env -S python cluster_jobs.py submit example_submit.yml
+# requires that `model_custom.py` can be imported.
+ 
+# This file contains the necessary adjustments to the `example_submit.yml` to run sequential simulations instead where chi is increased gradually:
+#
+# - Use `run_seq_simulations` instead of `run_simulation` in job_config.task.function
+# - Make sure to use the global `output_filename_params` expanded by TeNPy
+# - Add the global `sequential` section with the parameter that should be changed sequentially, 
+#   and remove that parameter from job_config.change_parameters.recursive_keys
+#
+# You can submit this file with
+#   python cluster_jobs.py submit -c last example_submit.yml example_submit_seq.yml
+
 
 job_config:
-    class: JobConfig  # JobConfig = run locally; SlurmJob = submit to slurm
-    jobname: MyJob
     task: 
-        type: PythonFunctionCall
-        module: tenpy
         function: run_seq_simulations
-        extra_imports: 
-            - custom_model
-
-    #script_template: slurm.sh
-    requirements_slurm:
-        time: '0:30:00'
-        nodes: 1
-    # requirements_sge:
-    #     time: '0:30:00'
-    #     nodes: 1
-    # options: 
-    #     mail: no@example.com
 
     change_parameters:
-
-        expansion: product  # product or zip
         recursive_keys:
-            - model_params.J2
-
+            - model_params.B
+            - model_params.D
 
 sequential:
     recursive_keys:
         - algorithm_params.trunc_params.chi_max
 
-log_params: 
-    to_stdout: WARNING
-    to_file: INFO
-
-simulation_class : GroundStateSearch
-
-# directory: results
-output_filename_params:
-    prefix: 'results'
-    suffix: '.h5'
-
-# Let's use our custom model:
-model_class :  AlternatingHeisenbergChain
-model_params :
-    L : 32
-    bc_MPS : finite
-    J1: 1.
-    J2: [0.25, 0.5, 0.75]
-
-initial_state_params:
-    method : lat_product_state
-    product_state : [[up], [down]]
-
-algorithm_class: TwoSiteDMRGEngine
-algorithm_params:
-    trunc_params:
-        svd_min: 1.e-8
-        chi_max: [128, 256]

@@ -2,6 +2,15 @@
 ##
 ## tenpy modulefile
 ##
+## Many computing clusters use a `module` system, where one can 
+## ``module load software-package`` for various software.
+## This file provides the definitions for a custom software module for your project.
+## To use it, copy this file into a new folder, say $HOME/.module_files, and add that
+## folder to the environment variabel $MODULE_PATH in your $HOME/.bashrc:
+##   export MODULEPATH="$MODULEPATH:$HOME/.module_files"
+## Further, adjust the `project_repo` path below
+ 
+ 
 proc ModulesHelp { } {
 	puts stderr "\tLoads environment variables for custom project"
 }
