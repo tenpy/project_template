@@ -28,4 +28,4 @@ setenv HDF5_USE_FILE_LOCKING FALSE
 
 append-path	PYTHONPATH	${tenpy}
 append-path	PYTHONPATH	${project_repo}
-append-path	PATH	${projecet_repo}
+append-path	PATH	${project_repo}
