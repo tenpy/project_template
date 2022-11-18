@@ -61,16 +61,15 @@ tenpy_sim_params = {
                                           'svd_min': 1e-08}},
 
     'connect_measurements': [['tenpy.simulations.measurement',
-                              'onsite_expectation_value',
+                              'm_onsite_expectation_value',
                               {'opname': 'Sz'}],
-                             ['tenpy.simulations.measurement',
-                              'psi_method',
-                              {'key': '<Sp_i Sm_j>',
-                               'method': 'correlation_function',
+                             ['psi_method',
+                              'wrap correlation_function'
+                              {'results_key': '<Sp_i Sm_j>',
                                'ops1': 'Sp',
                                'ops2': 'Sm'}],
                              ['model_custom',
-                              'pollmann_turner_inversion']],
+                              'm_pollmann_turner_inversion']],
 }
 
 
